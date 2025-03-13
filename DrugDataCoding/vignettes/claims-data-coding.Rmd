@@ -1,0 +1,122 @@
+---
+title: "Processing Drug-Related ICD-10 Codes in Claims Data"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Processing Drug-Related ICD-10 Codes in Claims Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette demonstrates how to use the `process_drug_icd10_vectorized()` function to identify drug-related diagnoses in healthcare claims data. The function creates binary indicators for various substance use disorders, poisonings, and related conditions based on ICD-10-CM codes.
+
+## Getting Started
+
+First, load the DrugDataCoding package:
+
+```{r}
+library(DrugDataCoding)
+```
+
+## Sample Data
+
+Let's create a sample dataset containing ICD-10 diagnosis codes:
+
+```{r}
+# Create a sample claims dataset
+sample_claims <- data.frame(
+  patient_id = 1:5,
+  I10_DX1 = c("F11.20", "F10.10", "G89.29", "F43.21", "T40.1X1A"),
+  I10_DX2 = c("Z79.891", "K70.0", NA, "F32.9", "X42"),
+  I10_DX3 = c("T40.1X1A", "T51.0X1A", NA, NA, "F11.20"),
+  I10_DX4 = c(NA, NA, NA, NA, NA),
+  stringsAsFactors = FALSE
+)
+
+sample_claims
+```
+
+## Processing the Data
+
+Now we'll use the `process_drug_icd10_vectorized()` function to identify drug-related diagnoses:
+
+```{r}
+processed_claims <- process_drug_icd10_vectorized(sample_claims)
+```
+
+Let's examine the results:
+
+```{r}
+# Look at the new indicators added to the dataset
+names(processed_claims)[-(1:5)]  # Show only the new variables
+
+# Show a subset of the indicators for each patient
+result_subset <- processed_claims[, c("patient_id", "opioid_use_disorder", 
+                                     "heroin_poisoning", "alcohol_use_disorder", 
+                                     "alcohol_poisoning", "any_drug_use_disorder", 
+                                     "any_drug_poisoning")]
+result_subset
+```
+
+## Understanding the Results
+
+Let's go through each patient in our sample dataset:
+
+1. **Patient 1**: Has codes F11.20 (Opioid dependence, uncomplicated), Z79.891 (Long-term use of opiate analgesic), and T40.1X1A (Poisoning by heroin, accidental, initial encounter)
+   - Identified as having an opioid use disorder and heroin poisoning
+
+2. **Patient 2**: Has codes F10.10 (Alcohol abuse, uncomplicated), K70.0 (Alcoholic fatty liver), and T51.0X1A (Toxic effect of ethanol, accidental, initial encounter)
+   - Identified as having an alcohol use disorder and alcohol poisoning
+
+3. **Patient 3**: Has code G89.29 (Other chronic pain)
+   - No drug-related indicators identified
+
+4. **Patient 4**: Has codes F43.21 (Adjustment disorder with depressed mood) and F32.9 (Major depressive disorder, single episode, unspecified)
+   - No drug-related indicators identified
+
+5. **Patient 5**: Has codes T40.1X1A (Poisoning by heroin, accidental, initial encounter), X42 (Accidental poisoning by narcotics), and F11.20 (Opioid dependence, uncomplicated)
+   - Identified as having an opioid use disorder and heroin poisoning
+
+## Using Custom Variable Names
+
+If your dataset uses different variable names for the diagnosis fields, you can specify them using the `dx_vars` parameter:
+
+```{r}
+# Create a sample with custom diagnosis field names
+sample_custom <- data.frame(
+  patient_id = 1:3,
+  DX_1 = c("F11.20", "F10.10", "F12.10"),
+  DX_2 = c("T40.1X1A", "K70.0", "F32.9"),
+  DX_3 = c(NA, NA, NA),
+  stringsAsFactors = FALSE
+)
+
+# Process using custom variable names
+processed_custom <- process_drug_icd10_vectorized(sample_custom, 
+                                                 dx_vars = c("DX_1", "DX_2", "DX_3"))
+
+# Check results
+processed_custom[, c("patient_id", "opioid_use_disorder", "heroin_poisoning", 
+                    "alcohol_use_disorder", "cannabis_use_disorder")]
+```
+
+## Summary
+
+The `process_drug_icd10_vectorized()` function allows you to efficiently identify a comprehensive set of drug-related conditions in healthcare claims data. This can be valuable for:
+
+- Epidemiological studies of substance use disorders
+- Health services research focusing on drug-related healthcare utilization
+- Quality improvement initiatives targeting substance use care
+- Surveillance of drug poisonings and overdoses
+
+The function handles large datasets efficiently through vectorized operations and can be adapted to different data structures through the `dx_vars` parameter.

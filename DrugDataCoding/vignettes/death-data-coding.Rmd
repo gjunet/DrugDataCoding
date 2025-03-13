@@ -1,0 +1,155 @@
+---
+title: "Processing Drug-Related ICD-10 Codes in Mortality Data"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Processing Drug-Related ICD-10 Codes in Mortality Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette demonstrates how to use the `process_death_records_extended()` function to identify drug-related deaths in mortality data. The function creates binary indicators for drug overdose deaths and specific drug poisonings based on ICD-10 codes, following CDC definitions.
+
+## Getting Started
+
+First, load the DrugDataCoding package:
+
+```{r}
+library(DrugDataCoding)
+```
+
+## Sample Data
+
+Let's create a sample dataset containing mortality records with ICD-10 cause of death codes:
+
+```{r}
+# Create a sample mortality dataset
+sample_mortality <- data.frame(
+  record_id = 1:5,
+  UCOD = c("X42", "X44", "I21.9", "Y14", "V89.2"),  # Underlying cause of death
+  MCOD1 = c("T40.1", "T40.4", "I10", "T40.2", "S06.9"),  # Multiple causes of death
+  MCOD2 = c("F11.2", "T43.6", "E11.9", NA, "S27.0"),
+  MCOD3 = c(NA, NA, NA, NA, NA),
+  stringsAsFactors = FALSE
+)
+
+sample_mortality
+```
+
+## Processing the Data
+
+Now we'll use the `process_death_records_extended()` function to identify drug-related deaths:
+
+```{r}
+processed_mortality <- process_death_records_extended(sample_mortality)
+```
+
+Let's examine the results:
+
+```{r}
+# Look at the new indicators added to the dataset
+names(processed_mortality)[-(1:5)]  # Show only the new variables
+
+# Show a subset of the indicators for each record
+result_subset <- processed_mortality[, c("record_id", "drug_overdose_death", 
+                                        "heroin_poisoning", "opioid_poisoning", 
+                                        "fentanyl_poisoning", "stimulant_poisoning",
+                                        "any_drug_poisoning")]
+result_subset
+```
+
+## Understanding the Results
+
+Let's examine each case in our sample dataset:
+
+1. **Record 1**: Has underlying cause X42 (Accidental poisoning by narcotics) with multiple causes T40.1 (Poisoning by heroin) and F11.2 (Opioid dependence)
+   - Identified as a drug overdose death with heroin poisoning and opioid poisoning
+
+2. **Record 2**: Has underlying cause X44 (Accidental poisoning by unspecified drugs) with multiple causes T40.4 (Poisoning by synthetic narcotics) and T43.6 (Poisoning by psychostimulants)
+   - Identified as a drug overdose death with fentanyl poisoning, opioid poisoning, and stimulant poisoning
+
+3. **Record 3**: Has underlying cause I21.9 (Acute myocardial infarction) with multiple causes I10 (Essential hypertension) and E11.9 (Type 2 diabetes)
+   - No drug-related indicators identified
+
+4. **Record 4**: Has underlying cause Y14 (Poisoning by drugs of undetermined intent) with multiple cause T40.2 (Poisoning by other opioids)
+   - Identified as a drug overdose death with opioid poisoning
+
+5. **Record 5**: Has underlying cause V89.2 (Motor vehicle accident) with multiple causes S06.9 (Unspecified intracranial injury) and S27.0 (Traumatic pneumothorax)
+   - No drug-related indicators identified
+
+## CDC Definitions of Drug Overdose Deaths
+
+According to the CDC and NCHS, drug overdose deaths are identified using the following ICD-10 underlying cause-of-death codes:
+
+- X40–X44: Accidental poisoning by drugs
+- X60–X64: Intentional self-poisoning by drugs
+- X85: Assault by drugs
+- Y10–Y14: Drug poisoning of undetermined intent
+
+The specific drugs involved are identified using T-codes as multiple causes of death:
+
+- T40.0: Opium
+- T40.1: Heroin
+- T40.2: Natural and semisynthetic opioids (e.g., oxycodone, hydrocodone)
+- T40.3: Methadone
+- T40.4: Synthetic opioids (e.g., fentanyl, tramadol)
+- T40.5: Cocaine
+- T40.7: Cannabis
+- T40.8–T40.9: Hallucinogens
+- T43.6: Psychostimulants with abuse potential (e.g., methamphetamine)
+
+## Using Custom Variable Names
+
+If your mortality dataset uses different variable names for the cause of death fields, you can specify them using the `icd_vars` parameter:
+
+```{r}
+# Create a sample with custom cause of death field names
+sample_custom <- data.frame(
+  record_id = 1:3,
+  UCD = c("X42", "X44", "I21.9"),  # Underlying cause of death
+  COD1 = c("T40.1", "T40.4", "I10"),  # Causes of death
+  COD2 = c("F11.2", "T43.6", "E11.9"),
+  COD3 = c(NA, NA, NA),
+  stringsAsFactors = FALSE
+)
+
+# Process using custom variable names
+processed_custom <- process_death_records_extended(sample_custom, 
+                                                  icd_vars = c("COD1", "COD2", "COD3"))
+
+# Check results
+processed_custom[, c("record_id", "drug_overdose_death", "heroin_poisoning", 
+                    "opioid_poisoning", "any_drug_poisoning")]
+```
+
+## Trends in Drug Overdose Deaths
+
+The CDC has documented significant changes in drug overdose death patterns over time:
+
+- From 1999 to 2018, drug overdose death rates increased from 6.1 per 100,000 to 20.7 per 100,000
+- After a steady increase, there was a 4.1% decline in drug overdose deaths from 2017 to 2018
+- Deaths involving synthetic opioids (mainly fentanyl) increased 10% from 2017 to 2018
+- Deaths involving cocaine and psychostimulants (like methamphetamine) continued to increase
+
+Using the `process_death_records_extended()` function allows researchers to track these patterns in their own mortality data.
+
+## Summary
+
+The `process_death_records_extended()` function provides a standardized method for identifying drug-related deaths in mortality data, following CDC definitions. This can be valuable for:
+
+- Epidemiological studies of drug overdose mortality
+- Surveillance of drug-related deaths
+- Research on the patterns and trends of specific substances involved in overdose deaths
+- Public health policy development and evaluation
+
+The function handles large datasets efficiently through vectorized operations and can be adapted to different data structures through the `icd_vars` parameter.

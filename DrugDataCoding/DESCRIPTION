@@ -1,0 +1,26 @@
+Package: DrugDataCoding
+Title: Functions for Coding Drug-Related ICD-10 Codes in Claims and Death Data
+Version: 0.1.0
+Authors@R: 
+    person(given = "Jay",
+           family = "Unick",
+           role = c("aut", "cre"),
+           email = "junick@ssw.umaryland.edu")
+Description: This package provides functions for processing and coding drug-related 
+    ICD-10 codes in healthcare claims data and mortality records. It includes 
+    functions for identifying drug overdoses, specific substance use disorders, 
+    and poisonings by drug category in accordance with CDC definitions. The package 
+    is based on established coding practices from the National Center for Health 
+    Statistics (NCHS).
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    stringr
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
